@@ -5,7 +5,7 @@
   "author": "Saad Bakht <saadbakht@gmail.com>",
   "dependencies": {
     "cheerio": "^0.20.0",
-    "folktale": "^1.0.0-SNAPSHOT",
+    "data.task": "^3.1.0",
     "ramda": "^0.21.0",
     "request": "^2.72.0"
   }
