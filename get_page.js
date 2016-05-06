@@ -3,24 +3,40 @@ var cheerio = require('cheerio');
 var Task = require("data.task");
 var fs = require('fs');
 var _ = require('ramda');
+var path = require('path');
 
 // TODO - legal headers and timeout so don't get banned
 // TODO - dies on non self posts
 
 function downloadUrl(url) {
-	request('https://www.reddit.com' + url, function (error, response, body) {
+	console.log(url);
+	request({url: url, headers: {'User-Agent': 'Searchinglol Bot'}}, function (error, response, body) {
 		if(!error && response.statusCode == 200) {
 			$ = cheerio.load(body);
-			console.log($('a.title').html());
-			console.log($('#siteTable .usertext-body p').html());
+			// console.log($('a.title').html());
+			// console.log($('#siteTable .usertext-body p').html());
+			var urlInfo = getUrlInfo(url);
+			console.log("Downloaded data from: " + urlInfo.toString());
+			fs.writeFile("./downloaded_html/" + urlInfo.subreddit + '-' + urlInfo.id + ".txt", body, { flag: 'wx' }, function(err) {
+				if(err) {
+					if(err.code === "EEXIST") {
+						console.log(urlInfo.id + " already stored in file");
+					}else{
+						console.log("Unable to save: ", urlInfo.id, err);
+					}
+				}else{
+					console.log("Data saved to: " + urlInfo.subreddit + '-' + urlInfo.id + '.txt');
+				}
+			});
+		}else{
+			console.log("Error reading url:", error);
 		}
-	}).pipe(fs.createWriteStream(getId(url)));
+	});
 }
 
-function getId(str) {
-	var postId = str.match(/comments\/(\w+)\/*/)[1];
-	console.log(postId);
-	return postId;
+function getUrlInfo(url) {
+	var matches = url.match(/\/r\/(\w+)\/comments\/(\w+)\/*/);
+	return { subreddit: matches[1], id: matches[2] };
 }
 
 
@@ -30,7 +46,15 @@ function getInfoFromFile() {
 	console.log($('a.title').html());
 	console.log($('#siteTable .usertext-body p').html());
 }
-getInfoFromFile();
+// getInfoFromFile();
+
+function makeFullUrl(end) {
+	return 'https://www.reddit.com' + end;
+}
+
+function isSelfPost(url) {
+	return url.startsWith("/r/leagueoflegends");
+}
 
 function getPostLinks() {
 	var results = []
@@ -38,12 +62,13 @@ function getPostLinks() {
 		if(!error && response.statusCode == 200) {
 			$ = cheerio.load(body);
 			$('a.title').map(function(i, el) {
-				console.log($(el).attr("href"));
+				// console.log($(el).attr("href"));
 				results.push($(el).attr("href"));
 			});
-			_.map(downloadUrl, results);
+			_.compose(_.map(_.compose(downloadUrl, makeFullUrl)), _.filter(isSelfPost))(results);
 		}
 	});
 }
 
 getPostLinks();
+// console.log(getUrlInfo('https://www.reddit.com/r/leagueoflegends/comments/4hzmm1/riot_should_lock'));
