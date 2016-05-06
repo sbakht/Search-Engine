@@ -16,7 +16,6 @@ function downloadUrl(url) {
 			// console.log($('a.title').html());
 			// console.log($('#siteTable .usertext-body p').html());
 			var urlInfo = getUrlInfo(url);
-			console.log("Downloaded data from: " + urlInfo.toString());
 			fs.writeFile("./downloaded_html/" + urlInfo.subreddit + '-' + urlInfo.id + ".txt", body, { flag: 'wx' }, function(err) {
 				if(err) {
 					if(err.code === "EEXIST") {
@@ -56,9 +55,9 @@ function isSelfPost(url) {
 	return url.startsWith("/r/leagueoflegends");
 }
 
-function getPostLinks() {
-	var results = []
-	request('https://www.reddit.com/r/leagueoflegends/', function (error, response, body) {
+function getPostLinks(url) {
+	var results = [];
+	request(url, function (error, response, body) {
 		if(!error && response.statusCode == 200) {
 			$ = cheerio.load(body);
 			$('a.title').map(function(i, el) {
@@ -66,9 +65,13 @@ function getPostLinks() {
 				results.push($(el).attr("href"));
 			});
 			_.compose(_.map(_.compose(downloadUrl, makeFullUrl)), _.filter(isSelfPost))(results);
+			var nextPage = $("[rel='nofollow next']").attr("href");
+			getPostLinks(nextPage);
 		}
 	});
 }
 
-getPostLinks();
+getPostLinks('https://www.reddit.com/r/leagueoflegends/');
 // console.log(getUrlInfo('https://www.reddit.com/r/leagueoflegends/comments/4hzmm1/riot_should_lock'));
+// $ = cheerio.load('<a href="https://www.reddit.com/r/leagueoflegends/?count=25&amp;after=t3_4hz1ea" rel="nofollow next">next ›</a>');
+// console.log($("[rel='nofollow next']").attr("href"))
