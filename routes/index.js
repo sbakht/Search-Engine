@@ -11,27 +11,27 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/', function(req, res) {
-  var query = req.body.q;
+  var query = _.split(" ", req.body.q);
   var forwardIndex = JSON.parse(fs.readFileSync("./indexes/forward_index.json"));
   var invertedIndex = JSON.parse(fs.readFileSync("./indexes/inverted_index.json"));
   var idToTitles = fs.readFileSync("./indexes/id_to_title_index.json")
 
-  var idOccurences = [];
-  var obj = invertedIndex[query];
-  var newfwd = {};
-  for(var id in obj) {
-  	idOccurences.push(id);
-    newfwd[id] = forwardIndex[id];
+  var count = {};
+
+  function occurences(accum, word) {
+    var obj = invertedIndex[word];
+    for(var id in obj) {
+      count[id] = (count[id] || 0) + 1;
+      if(count[id] == query.length) {
+        accum[id] = forwardIndex[id];
+      }
+    }
+    return accum;
   }
 
-  var test = function(id) {
-  	return idOccurences.indexOf(id) !== -1;
-  }
-  console.log(newfwd);
+  var fwdIndex = _.reduce(occurences, {}, query);
 
-
-
-  res.render('index', { title: 'Express', forwardIndex: JSON.stringify(newfwd), idToTitles: idToTitles });
+  res.render('index', { title: 'Express', forwardIndex: JSON.stringify(fwdIndex), idToTitles: idToTitles });
 
 });
 
