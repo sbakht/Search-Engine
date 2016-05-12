@@ -15,7 +15,7 @@ function makeFullUrl(end) {
 
 //isSelfPost :: String -> Bool
 function isSelfPost(url) {
-	return url.startsWith("/r/leagueoflegends");
+	return url.startsWith("/r/learnprogramming");
 }
 
 //getPageHtml :: FULLURL -> Task(HTML)
@@ -66,4 +66,4 @@ var app = function(startUrl) {
 	});
 }
 
-app('https://www.reddit.com/r/leagueoflegends/');
+app('https://www.reddit.com/r/learnprogramming/');
