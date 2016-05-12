@@ -1,0 +1,12 @@
+extends layout
+
+block content
+  h1= title
+  form(action='/', method='post')
+    input(type="text" name="q")
+    input(type="submit")
+  -var obj = JSON.parse(forwardIndex)
+  -var titles = JSON.parse(idToTitles);
+  -for(var id in obj)
+    a(href="http://www.reddit.com/r/learnprogramming/#{id}") #{titles[id]}
+    p #{obj[id].join(' ')}
