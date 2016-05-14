@@ -5,8 +5,10 @@ block content
   form(action='/', method='post')
     input(type="text" name="q")
     input(type="submit")
+  -var ranges = JSON.parse(range);
   -var obj = JSON.parse(forwardIndex)
   -var titles = JSON.parse(idToTitles);
   -for(var id in obj)
     a(href="http://www.reddit.com/r/learnprogramming/#{id}") #{titles[id]}
     p #{obj[id].join(' ')}
+    p #{ranges[id].join(' ')}
