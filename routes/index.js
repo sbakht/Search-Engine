@@ -2,6 +2,15 @@ var express = require('express');
 var router = express.Router();
 var fs = require('fs');
 var _ = require("ramda");
+var minWindow = require('../min_window')
+
+var concat = _.curry(function(start, end) {
+  start.push(end);
+  return start;
+});
+var flipProp = _.flip(_.prop);
+var mapIndexed = _.addIndex(_.map);
+
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -31,26 +40,38 @@ router.post('/', function(req, res) {
 
   var fwdIndex = _.reduce(occurences, {}, query);
 
-  var positions = {};
-  var range = {};
-  for(var id in fwdIndex) {
-    positions[id] = [];
-    query.forEach(function(word) {
-      // positions.push(invertedIndex[word][id]);
-      positions[id] = _.concat(positions[id], _.map(parseInt, invertedIndex[word][id]))
-    });
-    var diff = function(a, b) { return a - b; };
-    positions[id] = _.sort(diff, positions[id]);
-    console.log(positions[id])
-    var min = _.head(positions[id]);
-    var max = _.last(positions[id]);
-    console.log(max, min)
-    console.log(max - min)
-    range[id] = _.take(max-min+1, _.drop(min, fwdIndex[id]));
+  var getSnippet = _.curry(function(fwdIndex, invertedIndex, words, id) {
+    var propOfIndex = flipProp(invertedIndex);
+    var positionsOfQuery = _.map(_.compose(_.map(parseInt), _.prop(id), propOfIndex), words);
+    var window = minWindow(positionsOfQuery);
+    function toPositions(pos, i) {
+      pos--;
+      if(pos === -1) {
+        return positionsOfQuery[i][0];
+      }else{
+        return positionsOfQuery[i][pos];
+      }
+    }
+    var sort = _.sort((a,b) => a-b);
+    var snippetPositions = _.compose(sort, mapIndexed(toPositions))(window);
+    var min = _.head(snippetPositions);
+    var max = _.last(snippetPositions);
+    return _.take(max-min+1, _.drop(min, fwdIndex[id]));
+  });
+
+  var snippetFromQuery = getSnippet(fwdIndex, invertedIndex, query);
+
+  var storeSnippet = function(accum, id) {
+    accum[id] = snippetFromQuery(id);
+    return accum;
   }
+
+  var ids = _.keys(fwdIndex);
+  var range = _.reduce(storeSnippet, {}, ids);
 
   res.render('index', { title: 'Express', forwardIndex: JSON.stringify(fwdIndex), idToTitles: idToTitles , range: JSON.stringify(range)});
 
 });
 
 module.exports = router;
+
