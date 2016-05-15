@@ -1,3 +1,5 @@
 /node_modules
 *.swp
 /downloaded_html
+/indexes
+downloaded_urls.txt
